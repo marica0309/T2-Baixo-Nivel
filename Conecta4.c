@@ -7,6 +7,18 @@
 #define LINHAS 6
 #define COLUNAS 7
 
+int y; 
+int y_destino; 
+
+bool animando_ficha = false;
+
+//bool para ignorar o clique anterior
+bool ignorar_primeiro_clique = false;
+
+//Coluna selecionada para colocar a ficha
+int coluna_selecionada; 
+int meio_coluna_selecionada; 
+
 // Matriz que representa o estado do tabuleiro
 int tabuleiro_virtual[LINHAS][COLUNAS] = {0};
 
@@ -56,6 +68,80 @@ bool checar_vitoria(int jogador) {
         }
     }
     return false;
+}
+
+//Função para encontrar primeira linha disponível para a ficha "cair"
+int encontrar_linha_disponivel(int coluna) {
+    for (int linha = LINHAS - 1; linha >= 0; linha--) {
+        if (tabuleiro_virtual[linha][coluna] == 0) {
+            tabuleiro_virtual[linha][coluna] = 1; //sinaliza que aquele espaço no tabuleiro já está ocupado
+            if(linha == 0){
+                y_destino = 173; 
+            }
+            else if(linha == 1){
+                y_destino = 253; 
+            }
+            else if(linha == 2){
+                y_destino = 333; 
+            }
+            else if(linha == 3){
+                y_destino = 413; 
+            }
+            else if(linha == 4){
+                y_destino = 495; 
+            }else if(linha == 5){ 
+                y_destino = 584; 
+            }
+            else{
+                y_destino = -1; 
+            }
+            return linha; //linha = linha que a peça deve cair
+        }
+    }
+    return -1; // Coluna cheia
+}
+
+//Seleciona a coluna que o jogador quer colocar a ficha; funcionando
+void selecionar_coluna(int coord_x, int coord_y) 
+{
+    if (coord_x >= 168 && coord_x <= 243 && coord_y <= 586)
+    {
+        coluna_selecionada = 0;
+        meio_coluna_selecionada = 161; 
+    }
+    else if (coord_x >= 246 && coord_x <= 321 && coord_y <= 586)
+    {
+        coluna_selecionada = 1;
+        meio_coluna_selecionada =245;
+    }
+    else if (coord_x >= 324 && coord_x <= 399 && coord_y <= 586)
+    {
+        coluna_selecionada = 2;
+        meio_coluna_selecionada = 325;
+    }
+    else if (coord_x >= 405 && coord_x <= 480 && coord_y <= 586)
+    {
+        coluna_selecionada = 3; 
+        meio_coluna_selecionada = 408;
+    }
+    else if (coord_x >= 483 && coord_x <= 558 && coord_y <= 586)
+    {
+        coluna_selecionada = 4;
+        meio_coluna_selecionada = 486; 
+    }
+    else if (coord_x >= 561 && coord_x <= 636 && coord_y <= 586)
+    {
+        coluna_selecionada = 5;
+        meio_coluna_selecionada = 567;
+    }
+    else if (coord_x >= 639 && coord_x <= 714 && coord_y <= 586){
+        coluna_selecionada = 6; 
+        meio_coluna_selecionada = 643; 
+    }
+    else
+    {
+        coluna_selecionada = -1; //nenhuma coluna selecionada 
+    }
 }
 
 int main(int argc, char** argv) {
@@ -111,6 +197,20 @@ int main(int argc, char** argv) {
 
     SDL_Event event;
 
+   SDL_Rect local_vermelha = {
+    (int)(100 * escala),
+    (int)(200 * escala),
+    (int)(132 * escala),
+    (int)(132 * escala)
+    };
+
+    SDL_Rect local_amarela = {
+    (int)(100 * escala),
+    (int)(400 * escala),
+    (int)(132 * escala),
+    (int)(132 * escala)
+    };
+
     // Loop principal do jogo
     while (running) {
         // Processamento de eventos
@@ -129,6 +229,7 @@ int main(int argc, char** argv) {
                     if (x >= 299 && x <= 585 && y >= 282 && y <= 335) {
                         estado_atual = JOGO_IA;
                         printf("Modo: Jogar contra o Computador\n");
+                        ignorar_primeiro_clique = true; 
                     }
                     // Clique no botão "Jogar contra outro Jogador"
                     else if (x >= 301 && x <= 585 && y >= 403 && y <= 449) {
@@ -142,6 +243,66 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+
+            if (estado_atual == JOGO_IA)
+            {
+                seleciona_ficha = 0;
+                if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+                {
+                    if (ignorar_primeiro_clique)
+                    {
+                        ignorar_primeiro_clique = false;
+                        continue; 
+                    }
+
+                    int x = event.button.x;
+                    int y = event.button.y;
+                    // printf("X = %d\n", x);
+                    // printf("Y = %d\n", y);
+                    selecionar_coluna(x, y);
+                    int linha_disponivel = encontrar_linha_disponivel(coluna_selecionada);
+                    
+                    if (linha_disponivel != -1)
+                    { // entra so depois do 2 clique - arrumar
+                        int y = 2;
+                        SDL_Rect inicio_destino = {
+                            meio_coluna_selecionada,
+                            y,
+                            (int)(132 * escala),
+                            (int)(132 * escala)};
+
+                        while (y < y_destino)
+                        {
+                            printf("Entra no while"); 
+                            y += 10;
+                            inicio_destino.y = y;
+
+                            SDL_SetRenderDrawColor(renderer, 255, 230, 200, 255); // Fundo branco
+                            SDL_RenderClear(renderer);
+
+                            SDL_RenderCopy(renderer, tabuleiro, NULL, &quad1); // Redesenha o tabuleiro
+
+                            SDL_RenderCopy(renderer, ficha_vermelha, NULL, &local_vermelha); //desenha a ficha vermelha na esquerda
+                            SDL_RenderCopy(renderer, ficha_amarela, NULL, &local_amarela); //desenha a ficha amarela na esquerda 
+
+                            // Desenha a ficha na nova posição
+                            if (seleciona_ficha == 0)
+                            {
+                                SDL_RenderCopy(renderer, ficha_vermelha, NULL, &inicio_destino);
+                            }
+                            else if (seleciona_ficha == 1)
+                            {
+                                SDL_RenderCopy(renderer, ficha_amarela, NULL, &inicio_destino);
+                            }
+
+                            SDL_RenderPresent(renderer);
+                            SDL_Delay(10); // Controla a velocidade da animação
+                        }
+                        printf("Sai do while"); 
+
+                    }
+                }
+            }
         }
 
         // Limpa a tela com cor branca
@@ -149,7 +310,8 @@ int main(int argc, char** argv) {
         SDL_RenderClear(renderer);
 
         // Exibe o menu principal
-        if (estado_atual == MENU) {
+        if (estado_atual == MENU)
+        {
             SDL_RenderCopy(renderer, menu_img, NULL, NULL);
             SDL_RenderPresent(renderer);
             SDL_Delay(16);
@@ -157,13 +319,15 @@ int main(int argc, char** argv) {
         }
 
         // Tela de jogo PvP
-        if (estado_atual == JOGO_PVP) {
+        if (estado_atual == JOGO_PVP)
+        {
             SDL_SetRenderDrawColor(renderer, 200, 255, 200, 255); // Cor verde clara
             SDL_RenderClear(renderer);
         }
 
         // Tela de jogo contra IA
-        if (estado_atual == JOGO_IA) {
+        if (estado_atual == JOGO_IA)
+        {
             SDL_SetRenderDrawColor(renderer, 255, 230, 200, 255); // Cor laranja clara
             SDL_RenderClear(renderer);
         }
@@ -172,24 +336,13 @@ int main(int argc, char** argv) {
         SDL_RenderCopy(renderer, tabuleiro, NULL, &quad1);
 
         // Desenha ficha vermelha fixa (lado esquerdo)
-        SDL_Rect local_vermelha = {
-            (int)(100 * escala),
-            (int)(200 * escala),
-            (int)(132 * escala),
-            (int)(132 * escala)
-        };
         SDL_RenderCopy(renderer, ficha_vermelha, NULL, &local_vermelha);
 
         // Desenha ficha amarela fixa (lado esquerdo)
-        SDL_Rect local_amarela = {
-            (int)(100 * escala),
-            (int)(400 * escala),
-            (int)(132 * escala),
-            (int)(132 * escala)
-        };
+       
         SDL_RenderCopy(renderer, ficha_amarela, NULL, &local_amarela);
 
-        // Atualiza a posição vertical da ficha em movimento (efeito de queda)
+        /*// Atualiza a posição vertical da ficha em movimento (efeito de queda)
         if (posicaoY < (int)(850 * escala) && seleciona_ficha != -1) {
             posicaoY += 1;
         }
@@ -203,7 +356,7 @@ int main(int argc, char** argv) {
                 (int)(132 * escala)
             };
             SDL_RenderCopy(renderer, ficha, NULL, &posicao_inicial);
-        }
+        }*/
 
         // Atualiza a tela
         SDL_RenderPresent(renderer);
