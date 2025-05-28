@@ -23,3 +23,12 @@
         - Menu → jogo PvC → vitória/empate → replay/sair
         - Ajustar usabilidade (botões, texto, posicionamento).
         - Tratar erros e entradas inválidas.
+
+OBS:
+- ficha deve cair por gravidade
+
+COMANDOS:
+- Compilar: 
+    gcc Conecta4.c -I SDL2\i686-w64-mingw32\include -L SDL2\i686-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -o programa.exe
+- Rodar:
+    ./programa.exe
