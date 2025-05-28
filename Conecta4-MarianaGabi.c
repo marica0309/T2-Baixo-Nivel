@@ -2,6 +2,8 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define LINHAS 6
 #define COLUNAS 7
@@ -16,7 +18,7 @@ typedef enum {
 } EstadoJogo;
 
 EstadoJogo estado_atual = MENU;
-int jogador_vencedor = 0; // Agora está no escopo global
+int jogador_vencedor = 0;
 
 bool checar_vitoria(int jogador) {
     for (int i = 0; i < LINHAS; i++) {
@@ -56,6 +58,22 @@ int encontrar_linha_disponivel(int coluna) {
         }
     }
     return -1;
+}
+
+// IA simples: escolhe uma coluna aleatória válida
+int escolher_coluna_ia() {
+    int colunas_validas[COLUNAS];
+    int num_validas = 0;
+
+    for (int j = 0; j < COLUNAS; j++) {
+        if (encontrar_linha_disponivel(j) != -1) {
+            colunas_validas[num_validas++] = j;
+        }
+    }
+
+    if (num_validas == 0) return -1;
+
+    return colunas_validas[rand() % num_validas];
 }
 
 void tratar_clique_pvp(int mouse_x, int mouse_y, SDL_Rect quad1, int* jogador_atual, EstadoJogo* estado_atual) {
@@ -115,40 +133,12 @@ void tratar_clique_ia(int mouse_x, int mouse_y, SDL_Rect quad1, int* jogador_atu
         }
     }
 }
-/*
-void atualizar_animacoes(int* jogador_atual, EstadoJogo* estado_atual) {
-    for (int i = 0; i < MAX_ANIMACOES; i++) {
-        if (!animacoes[i].ativa) continue;
-
-        if (animacoes[i].linha_atual < animacoes[i].linha_final) {
-            animacoes[i].linha_atual += 0.2f; // Velocidade de animação
-        } else {
-            int linha = animacoes[i].linha_final;
-            int coluna = animacoes[i].coluna;
-            tabuleiro_virtual[linha][coluna] = animacoes[i].jogador;
-
-            if (checar_vitoria(animacoes[i].jogador)) {
-                *estado_atual = FINAL;
-                jogador_vencedor = animacoes[i].jogador;
-            } else if (checar_empate()) {
-                *estado_atual = MENU;
-                *jogador_atual = 1;
-                for (int i = 0; i < LINHAS; i++)
-                    for (int j = 0; j < COLUNAS; j++)
-                        tabuleiro_virtual[i][j] = 0;
-            } else {
-                *jogador_atual = 3 - *jogador_atual;
-            }
-
-            animacoes[i].ativa = false;
-        }
-    }
-}
-*/
 
 int main(int argc, char** argv) {
     float escala = 0.6f;
     bool ignorar_primeiro_clique = false;
+
+    srand((unsigned int)time(NULL));
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         printf("Erro ao inicializar SDL: %s\n", SDL_GetError());
@@ -187,8 +177,6 @@ int main(int argc, char** argv) {
             if (estado_atual == MENU && event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
                 int x = event.button.x;
                 int y = event.button.y;
-                
-                printf("Clique registrado em: x = %d, y = %d\n", x, y);
 
                 if (x >= 299 && x <= 585 && y >= 282 && y <= 335) {
                     estado_atual = JOGO_IA;
@@ -226,6 +214,32 @@ int main(int argc, char** argv) {
                     tratar_clique_pvp(mouse_x, mouse_y, quad1, &jogador_atual, &estado_atual);
                 } else if (estado_atual == JOGO_IA) {
                     tratar_clique_ia(mouse_x, mouse_y, quad1, &jogador_atual, &estado_atual);
+
+                    // Jogada automática da IA
+                    if (estado_atual == JOGO_IA && jogador_atual == 2) {
+                        SDL_Delay(500);
+                        int coluna_ia = escolher_coluna_ia();
+                        if (coluna_ia != -1) {
+                            int linha_disp = encontrar_linha_disponivel(coluna_ia);
+                            if (linha_disp != -1) {
+                                tabuleiro_virtual[linha_disp][coluna_ia] = jogador_atual;
+
+                                if (checar_vitoria(jogador_atual)) {
+                                    estado_atual = FINAL;
+                                    jogador_vencedor = jogador_atual;
+                                } else if (checar_empate()) {
+                                    printf("Empate! Reiniciando o jogo...\n");
+                                    estado_atual = MENU;
+                                    jogador_atual = 1;
+                                    for (int i = 0; i < LINHAS; i++)
+                                        for (int j = 0; j < COLUNAS; j++)
+                                            tabuleiro_virtual[i][j] = 0;
+                                } else {
+                                    jogador_atual = 1;
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -239,9 +253,7 @@ int main(int argc, char** argv) {
                     for (int i = 0; i < LINHAS; i++)
                         for (int j = 0; j < COLUNAS; j++)
                             tabuleiro_virtual[i][j] = 0;
-                } 
-
-                else if (x >= 276 && x <= 600 && y >= 448 && y <= 506) {
+                } else if (x >= 276 && x <= 600 && y >= 448 && y <= 506) {
                     running = 0;
                 }
             }
