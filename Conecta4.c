@@ -30,7 +30,6 @@ typedef enum {
 EstadoJogo estado_atual = MENU;
 int jogador_vencedor = 0;
 
-// Demais funções auxiliares
 bool checar_vitoria(int jogador) {
     for (int i = 0; i < LINHAS; i++) {
         for (int j = 0; j < COLUNAS; j++) {
@@ -105,26 +104,25 @@ void tratar_clique(int mouse_x, int mouse_y, SDL_Rect quad1, int* jogador_atual)
 }
 
 int main(int argc, char** argv) {
-    float escala = 0.6f;
     bool ignorar_primeiro_clique = false;
     srand((unsigned int)time(NULL));
 
     SDL_Init(SDL_INIT_EVERYTHING);
     IMG_Init(IMG_INIT_PNG);
 
-    int largura_janela = (int)(1500 * escala);
-    int altura_janela = (int)(1024 * escala);
+    int largura_janela = (int)(900);
+    int altura_janela = (int)(614.4);
     SDL_Window* window = SDL_CreateWindow("Connect Four", 100, 100, largura_janela, altura_janela, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
     SDL_Texture* menu_img = IMG_LoadTexture(renderer, "imagens/menu.png");
-    SDL_Texture* tabuleiro = IMG_LoadTexture(renderer, "imagens/jogo_tabuleiro.png");
-    SDL_Texture* ficha_vermelha = IMG_LoadTexture(renderer, "imagens/ficha_vermelha.png");
-    SDL_Texture* ficha_amarela = IMG_LoadTexture(renderer, "imagens/ficha_amarela.png");
+    SDL_Texture* tabuleiro = IMG_LoadTexture(renderer, "imagens1/jogo_tabuleiro.png");
+    SDL_Texture* ficha_vermelha = IMG_LoadTexture(renderer, "imagens1/ficha_vermelha.png");
+    SDL_Texture* ficha_amarela = IMG_LoadTexture(renderer, "imagens1/ficha_amarela.png");
     SDL_Texture* vencedor1 = IMG_LoadTexture(renderer, "imagens/vencedor1.png");
     SDL_Texture* vencedor2 = IMG_LoadTexture(renderer, "imagens/vencedor2.png");
 
-    SDL_Rect quad1 = { 200 * escala, 150 * escala, 1108 * escala, 887 * escala };
+    SDL_Rect quad1 = {200, 150 , 447 , 358};
 
     int jogador_atual = 1;
     SDL_Event event;
@@ -164,9 +162,7 @@ int main(int argc, char** argv) {
 
                 int mouse_x = event.button.x;
                 int mouse_y = event.button.y;
-
                 tratar_clique(mouse_x, mouse_y, quad1, &jogador_atual);
-
             }
 
             if (estado_atual == FINAL && event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
@@ -182,9 +178,7 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        // Jogada automática da IA (fora dos eventos!)
         if (estado_atual == JOGO_IA && jogador_atual == 2) {
-            // Só jogar se nenhuma animação estiver ativa
             bool animando = false;
             for (int i = 0; i < MAX_ANIMACOES; i++) {
                 if (animacoes[i].ativa) {
@@ -196,21 +190,20 @@ int main(int argc, char** argv) {
             static Uint32 tempo_espera = 0;
 
             if (!animando) {
-                if (tempo_espera == 0) tempo_espera = SDL_GetTicks();  // iniciar temporizador
+                if (tempo_espera == 0) tempo_espera = SDL_GetTicks();  
 
-                if (SDL_GetTicks() - tempo_espera > 500) {  // espera 500ms
+                if (SDL_GetTicks() - tempo_espera > 500) {  
                     int coluna_ia = escolher_coluna_ia();
                     int linha_disp = encontrar_linha_disponivel(coluna_ia);
                     if (linha_disp != -1) {
                         iniciar_animacao(coluna_ia, linha_disp, 2, quad1);
                     }
-                    tempo_espera = 0;  // resetar timer
+                    tempo_espera = 0;  
                 }
             } else {
-                tempo_espera = 0;  // resetar se ainda estiver animando
+                tempo_espera = 0;  
             }
         }
-
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
@@ -226,14 +219,12 @@ int main(int argc, char** argv) {
         if (estado_atual == JOGO_IA)  SDL_SetRenderDrawColor(renderer, 255, 230, 200, 255);
 
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, tabuleiro, NULL, &quad1);
-
-        // Atualizar animações
         int cellWidth = quad1.w / COLUNAS;
         int cellHeight = quad1.h / LINHAS;
+
         for (int i = 0; i < MAX_ANIMACOES; i++) {
             if (animacoes[i].ativa) {
-                float destinoY = quad1.y + animacoes[i].linha_final * cellHeight + (cellHeight - cellHeight * 0.8f) / 2;
+                float destinoY = quad1.y + animacoes[i].linha_final * cellHeight - 18; 
                 if (animacoes[i].y_atual < destinoY) {
                     animacoes[i].y_atual += 10;
                 } else {
@@ -254,31 +245,31 @@ int main(int argc, char** argv) {
                 }
 
                 SDL_Texture* ficha = (animacoes[i].jogador == 1) ? ficha_vermelha : ficha_amarela;
-                
                 SDL_Rect destino = {
-                    quad1.x + animacoes[i].coluna * cellWidth + (cellWidth - cellWidth * 0.8f) / 2,
+                    quad1.x + animacoes[i].coluna * cellWidth, 
                     (int)animacoes[i].y_atual,
-                    (int)(cellWidth * 0.8f),
-                    (int)(cellHeight * 0.8f)
+                    cellWidth,
+                    cellHeight
                 };
                 SDL_RenderCopy(renderer, ficha, NULL, &destino);
             }
         }
 
-        // Renderizar peças já fixas
         for (int i = 0; i < LINHAS; i++) {
             for (int j = 0; j < COLUNAS; j++) {
                 if (tabuleiro_virtual[i][j] == 0) continue;
                 SDL_Texture* ficha = (tabuleiro_virtual[i][j] == 1) ? ficha_vermelha : ficha_amarela;
                 SDL_Rect destino = {
-                    quad1.x + j * cellWidth + (cellWidth - cellWidth * 0.8f) / 2,
-                    quad1.y + i * cellHeight + (cellHeight - cellHeight * 0.8f) / 2,
-                    (int)(cellWidth * 0.8f),
-                    (int)(cellHeight * 0.8f)
+                    quad1.x + j * cellWidth,                  
+                    quad1.y + i * cellHeight - 18,           
+                    cellWidth,
+                    cellHeight
                 };
                 SDL_RenderCopy(renderer, ficha, NULL, &destino);
             }
         }
+
+        SDL_RenderCopy(renderer, tabuleiro, NULL, &quad1);
 
         if (estado_atual == FINAL) {
             SDL_RenderCopy(renderer, (jogador_vencedor == 1 ? vencedor1 : vencedor2), NULL, NULL);
