@@ -77,5 +77,3 @@ Este projeto é fornecido como exemplo educacional, sem garantia de funcionament
 
 ---
 
-> **Autor:** [Seu Nome]  
-> **Contato:** [Seu e-mail ou GitHub]
